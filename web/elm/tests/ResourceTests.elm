@@ -3982,6 +3982,7 @@ session =
         , width = 275
         }
     , draggingSideBar = False
+    , favoritedPipelines = []
     , screenSize = ScreenSize.Desktop
     , timeZone = Time.utc
     }
