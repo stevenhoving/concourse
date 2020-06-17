@@ -85,7 +85,7 @@ type DomID
     | SideBarResizeHandle
     | SideBarTeam String
     | SideBarPipeline Concourse.PipelineIdentifier
-    | SideBarStarIcon Concourse.PipelineIdentifier
+    | SideBarStarIcon Int -- Concourse.Pipeline.id
     | Dashboard
     | DashboardGroup String
 
