@@ -282,6 +282,15 @@ hasSideBar iAmLookingAtThePage =
                 >> when iAmLookingAtThePageBelowTheTopBar
                 >> then_ iSeeNoSideBar
         ]
+    , describe "sidebar sections" <|
+        -- zoe
+        [ test "when there are favorited pipelines" <|
+            given iHaveAnOpenSideBar_
+                >> given iClickedThePipelineGroup
+                >> given iClickedTheFirstPipelineStar
+                >> when iAmLookingAtTheSideBar
+                >> then_ iSeeFavoritesSection
+        ]
     , describe "teams list" <|
         let
             iHaveAnExpandedTeam =
@@ -541,7 +550,7 @@ hasSideBar iAmLookingAtThePage =
         , test "pipeline names align with the teamName" <|
             given iHaveAnExpandedTeam
                 >> when iAmLookingAtTheFirstPipelineIcon
-                >> then_ iSeeItAlignsWithTheTeamName
+                >> then_ iSeeItAlignsWithTheTeamName --zoe
         ]
     ]
 
@@ -1116,8 +1125,8 @@ iSeeItIsDim =
     Query.has [ style "opacity" "0.4" ]
 
 
-iAmLookingAtThePipelineList =
-    iAmLookingAtTheTeam >> Query.children [] >> Query.index 1
+iAmLookingAtThePipelineList = --zoe
+    iAmLookingAtTheTeam >> Query.children [] >> Query.index 0
 
 
 iAmLookingAtTheFirstPipeline =
@@ -1371,6 +1380,10 @@ iDoNotSeeAHamburgerIcon =
 
 iSeeNoSideBar =
     Query.hasNot [ id "side-bar" ]
+
+
+iSeeFavoritesSection =
+    Query.has [ text "favorites" ]
 
 
 myBrowserFetchedPipelinesFromMultipleTeams =
