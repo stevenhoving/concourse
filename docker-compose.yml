@@ -32,7 +32,7 @@ services:
       CONCOURSE_CLUSTER_NAME: dev
       CONCOURSE_ENABLE_ARCHIVE_PIPELINE: "true"
 
-  worker:
+  workerg:
     build: .
     image: concourse/concourse:local
     command: worker
@@ -45,9 +45,37 @@ services:
       CONCOURSE_LOG_LEVEL: debug
       CONCOURSE_TSA_HOST: web:2222
 
+      CONCOURSE_TAG: garden
       # avoid using loopbacks
       CONCOURSE_BAGGAGECLAIM_DRIVER: overlay
 
       # so we can reach Garden/Baggageclaim for debugging
       CONCOURSE_BIND_IP: 0.0.0.0
+      CONCOURSE_GARDEN_DENY_NETWORK: 169.254.169.254/32
       CONCOURSE_BAGGAGECLAIM_BIND_IP: 0.0.0.0
+      CONCOURSE_GARDEN_NETWORK_POOL: 10.254.0.0/12
+
+  workerc:
+    build: .
+    image: concourse/concourse:local
+    command: worker
+    privileged: true
+    depends_on: [web]
+    ports:
+      - 7771:7777
+      - 7781:7788
+    stop_signal: SIGUSR2
+    environment:
+      CONCOURSE_LOG_LEVEL: debug
+      CONCOURSE_TSA_HOST: web:2222
+      CONCOURSE_GARDEN_USE_CONTAINERD: "true"
+      CONCOURSE_TAG: containerd
+
+      # avoid using loopbacks
+      CONCOURSE_BAGGAGECLAIM_DRIVER: overlay
+      CONCOURSE_GARDEN_DENY_NETWORK: 169.254.169.254/32
+
+      # so we can reach Garden/Baggageclaim for debugging
+      CONCOURSE_BIND_IP: 0.0.0.0
+      CONCOURSE_BAGGAGECLAIM_BIND_IP: 0.0.0.0
+
