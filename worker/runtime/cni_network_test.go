@@ -125,6 +125,20 @@ func (s *CNINetworkSuite) TestSetupMountsCallsStoreWithOneNameServer() {
 	s.Equal(resolvConfContents, []byte("nameserver 6.6.7.7\nnameserver 1.2.3.4\n"))
 }
 
+func (s *CNINetworkSuite) TestSetupDenyNetworkAddsRejectRuleToCNIAdminChain() {
+	network, err := runtime.NewCNINetwork(
+		)
+	s.NoError(err)
+
+	_, err = network.SetupMounts("some-handle")
+	s.NoError(err)
+
+	err = network.SetupDenyNetwork()
+	s.NoError(err)
+
+	
+}
+
 func (s *CNINetworkSuite) TestAddNilTask() {
 	err := s.network.Add(context.Background(), nil)
 	s.EqualError(err, "nil task")

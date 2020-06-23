@@ -211,6 +211,71 @@ func (s *IntegrationSuite) TestContainerNetworkEgress() {
 	s.Equal("200 OK\n", buf.String())
 }
 
+// TestContainerNetworkEgressWithDenyNetwork aims at verifying that a process that we run in a
+// container that we create through our gardenBackend is not able to reach an address that
+// we have blocked access to.
+//
+func (s *IntegrationSuite) TestContainerNetworkEgressWithDenyNetwork() {
+	namespace := "test-deny-network"
+	requestTimeout := 3 * time.Second
+
+	network, err := runtime.NewCNINetwork(
+
+		)
+
+	s.NoError(err)
+
+	networkOpt := runtime.WithNetwork(network)
+	customBackend, err := runtime.NewGardenBackend(
+		libcontainerd.New(
+			s.containerdSocket(),
+			namespace,
+			requestTimeout,
+		),
+		networkOpt,
+	)
+	s.NoError(err)
+
+	s.NoError(customBackend.Start())
+
+	handle := uuid()
+
+	container, err := customBackend.Create(garden.ContainerSpec{
+		Handle:     handle,
+		RootFSPath: "raw://" + s.rootfs,
+		Privileged: true,
+	})
+	s.NoError(err)
+
+	defer func() {
+		s.NoError(customBackend.Destroy(handle))
+		customBackend.Stop()
+	}()
+
+	buf := new(buffer)
+	proc, err := container.Run(
+		garden.ProcessSpec{
+			Path: "/executable",
+			Args: []string{
+				"-http-get=http://www.google.com",
+			},
+		},
+		garden.ProcessIO{
+			Stdout: buf,
+			Stderr: buf,
+		},
+	)
+	s.NoError(err)
+
+	exitCode, err := proc.Wait()
+	s.NoError(err)
+
+	fmt.Println(buf.String())
+
+	s.Equal(exitCode, 0)
+	s.Equal("301 MOVED\n", buf.String())
+}
+
 // TestRunPrivileged tests whether we're able to run a process in a privileged
 // container.
 //
