@@ -257,7 +257,7 @@ func (s *IntegrationSuite) TestContainerNetworkEgressWithDenyNetwork() {
 		garden.ProcessSpec{
 			Path: "/executable",
 			Args: []string{
-				"-http-get=http://www.google.com",
+				"-http-get=http://1.1.1.1",
 			},
 		},
 		garden.ProcessIO{
@@ -270,10 +270,10 @@ func (s *IntegrationSuite) TestContainerNetworkEgressWithDenyNetwork() {
 	exitCode, err := proc.Wait()
 	s.NoError(err)
 
-	fmt.Println(buf.String())
+	s.Equal(exitCode, 1)
+	s.Contains(buf.String(), "connect: connection refused")
 
-	s.Equal(exitCode, 0)
-	s.Equal("301 MOVED\n", buf.String())
+	//TODO: clean up iptables entries
 }
 
 // TestRunPrivileged tests whether we're able to run a process in a privileged

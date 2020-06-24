@@ -3,10 +3,9 @@ package runtime_test
 import (
 	"context"
 	"errors"
-
 	"github.com/concourse/concourse/worker/runtime"
-	"github.com/concourse/concourse/worker/runtime/runtimefakes"
 	"github.com/concourse/concourse/worker/runtime/libcontainerd/libcontainerdfakes"
+	"github.com/concourse/concourse/worker/runtime/runtimefakes"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -123,20 +122,6 @@ func (s *CNINetworkSuite) TestSetupMountsCallsStoreWithOneNameServer() {
 
 	_, resolvConfContents := s.store.CreateArgsForCall(1)
 	s.Equal(resolvConfContents, []byte("nameserver 6.6.7.7\nnameserver 1.2.3.4\n"))
-}
-
-func (s *CNINetworkSuite) TestSetupDenyNetworkAddsRejectRuleToCNIAdminChain() {
-	network, err := runtime.NewCNINetwork(
-		)
-	s.NoError(err)
-
-	_, err = network.SetupMounts("some-handle")
-	s.NoError(err)
-
-	err = network.SetupDenyNetwork()
-	s.NoError(err)
-
-	
 }
 
 func (s *CNINetworkSuite) TestAddNilTask() {

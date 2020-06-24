@@ -22,6 +22,7 @@ import (
 	"github.com/tedsuo/ifrit/restart"
 )
 
+// TODO This constructor could use refactoring using the functional options pattern.
 func containerdGardenServerRunner(
 	logger lager.Logger,
 	bindAddr,
@@ -29,6 +30,7 @@ func containerdGardenServerRunner(
 	requestTimeout time.Duration,
 	dnsServers []string,
 	networkPool string,
+	denyNetworks []string,
 ) (ifrit.Runner, error) {
 	const (
 		graceTime = 0
@@ -40,6 +42,10 @@ func containerdGardenServerRunner(
 
 	if len(dnsServers) > 0 {
 		networkOpts = append(networkOpts, runtime.WithNameServers(dnsServers))
+	}
+
+	if len(denyNetworks) > 0 {
+		networkOpts = append(networkOpts, runtime.WithDenyNetworks(denyNetworks))
 	}
 
 	if networkPool != "" {
@@ -177,6 +183,7 @@ func (cmd *WorkerCommand) containerdRunner(logger lager.Logger) (ifrit.Runner, e
 		cmd.Garden.RequestTimeout,
 		dnsServers,
 		cmd.ContainerNetworkPool,
+		cmd.Garden.DenyNetwork,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("containerd garden server runner: %w", err)

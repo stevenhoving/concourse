@@ -15,6 +15,10 @@ type Network interface {
 	//
 	SetupMounts(handle string) (mounts []specs.Mount, err error)
 
+	//TODO: write description
+	// SetupDenyNetwork
+	SetupDenyNetwork() error
+
 	// Add adds a task to the network.
 	//
 	Add(ctx context.Context, task containerd.Task) (err error)

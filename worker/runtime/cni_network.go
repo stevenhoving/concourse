@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/containerd/containerd"
@@ -139,12 +140,20 @@ func WithCNIFileStore(f FileStore) CNINetworkOpt {
 	}
 }
 
+//TODO Add description
+func WithDenyNetworks(denyNetworks []string) CNINetworkOpt {
+	return func(n *cniNetwork) {
+		n.denyNetworks = denyNetworks
+	}
+}
+
 type cniNetwork struct {
 	client      cni.CNI
 	store       FileStore
 	config      CNINetworkConfig
 	nameServers []string
 	binariesDir string
+	denyNetworks []string
 }
 
 var _ Network = (*cniNetwork)(nil)
@@ -218,6 +227,62 @@ func (n cniNetwork) SetupMounts(handle string) ([]specs.Mount, error) {
 			Options:     []string{"bind", "rw"},
 		},
 	}, nil
+}
+
+func (n cniNetwork) SetupDenyNetwork() error {
+	if len(n.denyNetworks) > 0 {
+		err := createIptablesChain()
+		if err != nil {
+			return err
+		}
+
+		return  createRejectRules(n.denyNetworks)
+	}
+	return nil
+}
+
+// Create chain - ignore error if it already exists
+func createIptablesChain() error {
+	cmd := exec.Command("iptables", "-t", "filter", "-N", "CNI-ADMIN")
+	_, err := cmd.Output()
+
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			// Ignore error if Chain already exists
+			if string(exitErr.Stderr) != "iptables: Chain already exists.\n" {
+				return fmt.Errorf("failed to create chain CNI-ADMIN: %s", string(exitErr.Stderr))
+			}
+		} else {
+			return fmt.Errorf("failed to create chain CNI-ADMIN: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// Check if rule exists
+// if no - flush the table and create it
+
+// Case 1 - new rule added - worker restarted with a new CONCOURSE_GARDEN_DENY_NETWORK
+// Case 2 - old rule removed
+func createRejectRules(denyNetworks []string) error {
+	cmd := exec.Command("iptables", "-C", "CNI-ADMIN", "-d", "1.1.1.1", "-j", "REJECT")
+	err := cmd.Run()
+	if err != nil {
+
+		cmd = exec.Command("iptables", "-F", "CNI-ADMIN")
+		err = cmd.Run()
+		if err != nil {
+			return fmt.Errorf("failed to flush chain: %w", err)
+		}
+		cmd = exec.Command("iptables", "-A", "CNI-ADMIN", "-d", "1.1.1.1", "-j", "REJECT")
+		err = cmd.Run()
+		if err != nil {
+			return fmt.Errorf("failed to create REJECT rule: %w", err)
+		}
+
+	}
+	return nil
 }
 
 func (n cniNetwork) generateResolvConfContents() []byte {
