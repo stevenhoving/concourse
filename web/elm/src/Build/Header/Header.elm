@@ -8,6 +8,7 @@ module Build.Header.Header exposing
     )
 
 import Api.Endpoints as Endpoints
+import Api.EventSource exposing (Event(..))
 import Application.Models exposing (Session)
 import Build.Header.Models exposing (BuildPageType(..), HistoryItem, Model)
 import Build.Header.Views as Views
@@ -336,7 +337,7 @@ handleDelivery delivery ( model, effects ) =
                     (List.filterMap
                         (\{ data } ->
                             case data of
-                                STModels.BuildStatus status date ->
+                                Event (STModels.BuildStatus status date) ->
                                     Just ( status, date )
 
                                 _ ->
